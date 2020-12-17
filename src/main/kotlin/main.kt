@@ -1,16 +1,19 @@
 import com.fasterxml.jackson.databind.MappingIterator
 import com.fasterxml.jackson.dataformat.csv.CsvMapper
-import com.fasterxml.jackson.dataformat.csv.CsvSchema
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import model.PropertyField
 import model.TypeEditor
 import java.io.File
-import java.io.FileReader
+import java.util.*
 
 @ExperimentalStdlibApi
 fun main(args: Array<String>) {
-    val properties = readPropertiesFromCsv(fileName = "export.csv")
-    val template = buildTemplate(properties, templateType = "B2BSlot", templateName = "B2BSubcriberInfoSlot")
+    val properties = readPropertiesFromCsv(fileName = args[0])
+    buildTemplate(properties,
+        templateType = args[1],
+        templateName = args[2],
+        defaultValues = (args.size > 3 && "yes".equals(args[3], ignoreCase = true))
+    )
 }
 
 @ExperimentalStdlibApi
@@ -33,20 +36,23 @@ fun readPropertiesFromCsv(fileName: String): List<PropertyField> {
 fun buildTemplate(
     properties: List<PropertyField>,
     templateType: String,
-    templateName: String
+    templateName: String,
+    defaultValues: Boolean
 ) {
-    val contentItemBuilder = StringBuilder()
-    val editorPanelBuilder = StringBuilder()
-    val descRuBuilder = StringBuilder()
-    val descEnBuilder = StringBuilder()
+    val contentItemBuilder = StringJoiner("\n")
+    val editorPanelBuilder = StringJoiner("\n")
+    val descRuBuilder = StringJoiner("\n")
+    val descEnBuilder = StringJoiner("\n")
 
     properties.forEach {
         val propertyBody = when(it.type) {
             TypeEditor.BOOLEAN -> "<Boolean>${it.example}</Boolean>"
             TypeEditor.STRING, TypeEditor.RICH_TEXT -> {
-                if (it.example?.contains("<") == true)
-                    "<String><![CDATA[${it.example}]]></String>"
-                else "<String>${it.example}</String>"
+                if (it.example?.isNotBlank() == true && defaultValues) {
+                    if (it.example.contains("<"))
+                        "<String><![CDATA[${it.example}]]></String>"
+                    else "<String>${it.example}</String>"
+                } else "<String/>"
             }
             else -> "UNKNOWN"
         }
@@ -58,51 +64,50 @@ fun buildTemplate(
         }
         val propertyPath = "property.${it.name}.label"
 
-        contentItemBuilder.append("""
-            <Property name="${it.name}">
-                $propertyBody
-            </Property>
-            """.trimIndent()
-        ).append("\n")
+        contentItemBuilder.add("""
+        <Property name="${it.name}">
+             $propertyBody
+        </Property>
+        """.trimMargin("|")
+        )
 
-        editorPanelBuilder.append("""
-             <editors:$editorName propertyName="${it.name}" label="${'$'}{$propertyPath}" />
-        """.trimIndent()
-        ).append("\n")
+        editorPanelBuilder.add("""
+            <editors:$editorName propertyName="${it.name}" label="${'$'}{$propertyPath}" />
+        """.trimMargin("|")
+        )
 
-        descRuBuilder.append("""
+        descRuBuilder.add("""
             $propertyPath=${it.descRus}
         """.trimIndent()
-        ).append("\n")
+        )
 
-        descEnBuilder.append("""
+        descEnBuilder.add("""
             $propertyPath=${it.descEng}
         """.trimIndent()
-        ).append("\n")
+        )
     }
 
     val template = """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <ContentTemplate xmlns="http://endeca.com/schema/content-template/2008"
-            xmlns:editors="editors"
-            xmlns:xavia="http://endeca.com/schema/xavia/2010"
-            type="$templateType">
-            <Description>${'$'}{template.description}</Description>
-            <ThumbnailUrl>thumbnail.jpg</ThumbnailUrl>
-            <ContentItem>
-                <Name>$templateName</Name>
-                $contentItemBuilder
-            </ContentItem>
-            <EditorPanel>
-                <BasicContentItemEditor>
-                     $editorPanelBuilder
-                </BasicContentItemEditor>
-            </EditorPanel>
-        </ContentTemplate>
-        
+<?xml version="1.0" encoding="UTF-8"?>
+<ContentTemplate xmlns="http://endeca.com/schema/content-template/2008"
+    xmlns:editors="editors"
+    xmlns:xavia="http://endeca.com/schema/xavia/2010"
+    type="$templateType">
+    <Description>${'$'}{template.description}</Description>
+    <ThumbnailUrl>thumbnail.jpg</ThumbnailUrl>
+    <ContentItem>
+        <Name>$templateName</Name>
+        $contentItemBuilder
+    </ContentItem>
+    <EditorPanel>
+        <BasicContentItemEditor>
+            $editorPanelBuilder
+        </BasicContentItemEditor>
+    </EditorPanel>
+</ContentTemplate>
     """.trimIndent()
 
-    File("template.xml").writeText(template)
-    File("Resources_ru.properties").writeText(descRuBuilder.toString())
-    File("Resources_en.properties").writeText(descEnBuilder.toString())
+    File("template.xml").writeText(template + "\n")
+    File("Resources_ru.properties").writeText(descRuBuilder.toString() + "\n")
+    File("Resources_en.properties").writeText(descEnBuilder.toString() + "\n")
 }
