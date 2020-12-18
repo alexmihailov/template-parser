@@ -1,6 +1,9 @@
 import com.fasterxml.jackson.databind.MappingIterator
 import com.fasterxml.jackson.dataformat.csv.CsvMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import com.typesafe.config.ConfigFactory
+import config.BuilderConfig
+import io.github.config4k.extract
 import model.PropertyField
 import model.TypeEditor
 import java.io.File
@@ -61,9 +64,11 @@ fun buildTemplate(
         editorPanel = editorPanelBuilder.toString()
     )
 
-    File("template.xml").writeText(template + "\n")
-    File("Resources_ru.properties").writeText(descRuBuilder.toString() + "\n")
-    File("Resources_en.properties").writeText(descEnBuilder.toString() + "\n")
+    val config: BuilderConfig = ConfigFactory.load("application.conf").extract("builderConfig")
+
+    File(config.templateFileName).writeText(template + "\n")
+    File(config.resourcesRusFileName).writeText(descRuBuilder.toString() + "\n")
+    File(config.resourcesEngFileName).writeText(descEnBuilder.toString() + "\n")
 }
 
 private fun TypeEditor.getEditorName() = when(this) {
