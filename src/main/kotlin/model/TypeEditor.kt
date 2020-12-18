@@ -8,5 +8,6 @@ enum class TypeEditor {
     RICH_TEXT,
     BOOLEAN,
     LINK_CONTENT,
+    GROUP_LABEL,
     UNKNOWN
 }
