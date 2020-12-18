@@ -7,3 +7,4 @@ package deserializer
 const val SIMPLE_TEXT = "простой текст"
 const val HTML_TEXT = " с возможностью редактирования HTML"
 const val BOOLEAN_EDITOR = "boolean"
+const val LINK = "LinkContent"

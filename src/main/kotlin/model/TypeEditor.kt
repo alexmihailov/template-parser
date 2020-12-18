@@ -7,5 +7,6 @@ enum class TypeEditor {
     STRING,
     RICH_TEXT,
     BOOLEAN,
+    LINK_CONTENT,
     UNKNOWN
 }

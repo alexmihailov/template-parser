@@ -54,15 +54,9 @@ fun buildTemplate(
                     else "<String>${it.example}</String>"
                 } else "<String/>"
             }
+            TypeEditor.LINK_CONTENT -> "<ContentItem type=\"LinkContent\" />"
             else -> "UNKNOWN"
         }
-        val editorName = when(it.type) {
-            TypeEditor.BOOLEAN -> "BooleanEditor"
-            TypeEditor.STRING -> "StringEditor"
-            TypeEditor.RICH_TEXT -> "RichTextEditor"
-            else -> "UNKNOWN"
-        }
-        val propertyPath = "property.${it.name}.label"
 
         contentItemBuilder.add("""
         <Property name="${it.name}">
@@ -71,20 +65,32 @@ fun buildTemplate(
         """.trimMargin("|")
         )
 
-        editorPanelBuilder.add("""
+        when(it.type) {
+            TypeEditor.BOOLEAN, TypeEditor.STRING, TypeEditor.RICH_TEXT -> {
+                val propertyPath = "property.${it.name}.label"
+                val editorName = when(it.type) {
+                    TypeEditor.BOOLEAN -> "BooleanEditor"
+                    TypeEditor.STRING -> "StringEditor"
+                    TypeEditor.RICH_TEXT -> "RichTextEditor"
+                    else -> "UNKNOWN"
+                }
+                editorPanelBuilder.add("""
             <editors:$editorName propertyName="${it.name}" label="${'$'}{$propertyPath}" />
-        """.trimMargin("|")
-        )
+                """.trimMargin("|")
+                )
 
-        descRuBuilder.add("""
-            $propertyPath=${it.descRus}
-        """.trimIndent()
-        )
+                descRuBuilder.add("""
+                    $propertyPath=${it.descRus}
+                """.trimIndent()
+                )
 
-        descEnBuilder.add("""
-            $propertyPath=${it.descEng}
-        """.trimIndent()
-        )
+                descEnBuilder.add("""
+                    $propertyPath=${it.descEng}
+                """.trimIndent()
+                )
+            }
+            else -> {}
+        }
     }
 
     val template = """

@@ -16,6 +16,7 @@ class TypeEditorDeserializer : JsonDeserializer<TypeEditor>() {
             text.equals(SIMPLE_TEXT, ignoreCase = true) -> TypeEditor.STRING
             text.contains(HTML_TEXT, ignoreCase = true) -> TypeEditor.RICH_TEXT
             text.equals(BOOLEAN_EDITOR, ignoreCase = true) -> TypeEditor.BOOLEAN
+            text.equals(LINK, ignoreCase = true) -> TypeEditor.LINK_CONTENT
             else -> TypeEditor.UNKNOWN
         }
     }
